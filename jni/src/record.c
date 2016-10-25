@@ -5,7 +5,8 @@
 #include "uinput.h"
 
 const char *EV_PREFIX  = "/dev/input/";
-const char *OUT_FN = "/sdcard/events";
+const char *OUT_FN = "/sdcard/script";
+const char *TIME = "/sdcard/time";
 /* const char *OUT_PREFIX = "/sdcard/"; */
 
 /* NB event4 is the compass -- not required for tests. */
@@ -17,6 +18,7 @@ struct pollfd in_fds[NUM_DEVICES];
 int out_fds[NUM_DEVICES];
 */
 int out_fd;
+int out_time;
 
 int
 init()
@@ -27,6 +29,12 @@ init()
 	out_fd = open(OUT_FN, O_WRONLY | O_CREAT | O_TRUNC);
 	if(out_fd < 0) {
 		printf("Couldn't open output file\n");
+		return 1;
+	}
+
+	out_time = open(TIME, O_WRONLY | O_CREAT | O_TRUNC);
+	if(out_time < 0) {
+		printf("Couldn't open output time file\n");
 		return 1;
 	}
 
@@ -79,9 +87,18 @@ record()
 					printf("Write error\n");
 					return 4;
 				}
+				char path_t[32] = {0};
+				char str[16];
+				sprintf(str, "%ld", event.time.tv_sec);
+				strcat(path_t, str);
+				strcat(path_t, "#");
+				if(write(out_time, str, strlen(str)) != strlen(str)) {
+					printf("Write error\n");
+					return 5;
+				}				
 
-//				printf("input %d, time %ld.%06ld, type %d, code %d, value %d\n", i,
-//						event.time.tv_sec, event.time.tv_usec, event.type, event.code, event.value);
+				printf("input %d, time %ld.%06ld, type %d, code %d, value %d\n", i,
+						event.time.tv_sec, event.time.tv_usec, event.type, event.code, event.value);
 			}
 		}
 	}

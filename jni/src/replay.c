@@ -9,7 +9,7 @@
 #include "uinput.h"
 
 const char *EV_PREFIX  = "/dev/input/";
-const char *IN_FN = "/sdcard/events";
+const char *IN_FN = "/sdcard/script";
 
 /* NB event4 is the compass -- not required for tests. */
 char *ev_devices[] = {"event0", "event1", "event2", "event3" /*, "event4" */};
