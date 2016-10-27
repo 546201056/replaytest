@@ -1,12 +1,16 @@
 #include <stdio.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <fcntl.h> 
 #include <poll.h>
 #include <linux/input.h>
+#include <linux/time.h>
 #include "uinput.h"
 
 const char *EV_PREFIX  = "/dev/input/";
-const char *OUT_FN = "/sdcard/script";
-const char *TIME = "/sdcard/time";
+const char *workDir = "/sdcard/script/";
+const char *OUT_FN = "myscript";
+const char *TIME = "myscripttime";
 /* const char *OUT_PREFIX = "/sdcard/"; */
 
 /* NB event4 is the compass -- not required for tests. */
@@ -26,13 +30,46 @@ init()
 	char buffer[256];
 	int i, fd;
 
-	out_fd = open(OUT_FN, O_WRONLY | O_CREAT | O_TRUNC);
+	// 创建文件夹
+	if(access(workDir,0) != 0)
+		if(mkdir(workDir,777)!=0)
+			printf("Couldn't create work dir...\n");
+
+	// 获取时间戳
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	printf("record start time is %ld\n", now.tv_sec);
+	//生成时间戳为名字的文件夹路径 
+	char newScriptDir[64] = {0};
+	char timestamp[16];
+	sprintf(timestamp, "%ld", now.tv_sec);
+	strcat(newScriptDir, workDir);
+	strcat(newScriptDir, timestamp);
+	strcat(newScriptDir, "/");
+	// 创建新路径文件夹
+	if(access(newScriptDir,0) != 0)
+		if(mkdir(newScriptDir,777)!=0)
+			printf("Couldn't create newScriptDir ...\n");
+
+	//根据新的文件路径创建新的文件
+	char new_out[64] = {0};
+	strcpy(new_out, newScriptDir);
+	strcat(new_out, OUT_FN);
+
+	char new_time[64] = {0};
+	strcpy(new_time, newScriptDir);
+	strcat(new_time, TIME);	
+
+
+
+
+	out_fd = open(new_out, O_WRONLY | O_CREAT | O_TRUNC);
 	if(out_fd < 0) {
 		printf("Couldn't open output file\n");
 		return 1;
 	}
 
-	out_time = open(TIME, O_WRONLY | O_CREAT | O_TRUNC);
+	out_time = open(new_time, O_WRONLY | O_CREAT | O_TRUNC);
 	if(out_time < 0) {
 		printf("Couldn't open output time file\n");
 		return 1;
@@ -91,8 +128,8 @@ record()
 				char str[16];
 				sprintf(str, "%ld", event.time.tv_sec);
 				strcat(path_t, str);
-				strcat(path_t, "#");
-				if(write(out_time, str, strlen(str)) != strlen(str)) {
+				strcat(path_t, "\n");
+				if(write(out_time, path_t, strlen(path_t)) != strlen(path_t)) {
 					printf("Write error\n");
 					return 5;
 				}				

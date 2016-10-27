@@ -9,7 +9,7 @@
 #include "uinput.h"
 
 const char *EV_PREFIX  = "/dev/input/";
-const char *IN_FN = "/sdcard/script";
+const char *IN_FN = "/sdcard/zapp/event/myscript";
 
 /* NB event4 is the compass -- not required for tests. */
 char *ev_devices[] = {"event0", "event1", "event2", "event3" /*, "event4" */};
@@ -96,6 +96,12 @@ replay()
 
 //		printf("input %d, time %ld.%06ld, type %d, code %d, value %d\n", outputdev,
 //				event.time.tv_sec, event.time.tv_usec, event.type, event.code, event.value);
+	}
+
+	//关闭设备文件和事件文件
+	close(in_fd);
+	for(i = 0; i < NUM_DEVICES; i++){
+		close(out_fds[i]);
 	}
 
 	return 0;
